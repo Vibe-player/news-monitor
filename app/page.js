@@ -7,7 +7,7 @@ export default function Home(){
 const [data,setData]=useState([]);
 const [tab,setTab]=useState("헤드라인");
 const [search,setSearch]=useState("");
-const [selected,setSelected]=useState({});
+const [breaking,setBreaking]=useState(null);
 
 async function loadNews(){
 
@@ -16,22 +16,54 @@ const json=await res.json();
 
 setData(json);
 
-setSelected(prev=>{
-const updated={...prev};
+const breakingNews=[];
+
 json.forEach(p=>{
-if(updated[p.source]===undefined){
-updated[p.source]=true;
+p.headlines.forEach(a=>{
+
+if(
+a.title.includes("속보") ||
+a.title.includes("단독") ||
+a.title.includes("1보")
+){
+
+if(a.pubDate){
+
+const age = Date.now() - new Date(a.pubDate).getTime();
+
+if(age < 600000){
+breakingNews.push(a);
 }
+
+}
+
+}
+
 });
-return updated;
 });
+
+if(breakingNews.length>0){
+
+breakingNews.sort(
+(a,b)=>new Date(b.pubDate)-new Date(a.pubDate)
+);
+
+setBreaking(breakingNews[0]);
+
+}else{
+
+setBreaking(null);
+
+}
 
 }
 
 useEffect(()=>{
 
 loadNews();
+
 const interval=setInterval(loadNews,30000);
+
 return()=>clearInterval(interval);
 
 },[]);
@@ -72,7 +104,37 @@ return(
 
 <h1 style={{fontSize:28,fontWeight:700}}>📰 News Brief</h1>
 
-<div style={{display:"flex",gap:8,margin:"20px 0"}}>
+{breaking && (
+
+<div
+style={{
+background:"#d32f2f",
+color:"white",
+padding:"10px 14px",
+borderRadius:8,
+marginBottom:20,
+fontWeight:600
+}}
+>
+
+🚨 속보 | 
+
+<a
+href={breaking.link}
+target="_blank"
+rel="noopener noreferrer"
+style={{color:"white",marginLeft:6}}
+>
+
+{breaking.title}
+
+</a>
+
+</div>
+
+)}
+
+<div style={{display:"flex",gap:8,marginBottom:20}}>
 
 {["헤드라인","칼럼","속보&단독"].map(t=>(
 
@@ -88,7 +150,9 @@ color:tab===t?"white":"black",
 cursor:"pointer"
 }}
 >
+
 {t}
+
 </button>
 
 ))}
@@ -110,52 +174,30 @@ borderRadius:8
 
 {data.map(p=>{
 
-const enabled=selected[p.source]!==false;
-
-const articles=enabled ? filtered(p.headlines) : [];
+const articles=filtered(p.headlines);
 
 return(
 
 <div key={p.source} style={{marginBottom:30}}>
 
-<div style={{
-display:"flex",
-justifyContent:"space-between",
-alignItems:"center"
-}}>
+<h3 style={{marginBottom:10}}>{p.source}</h3>
 
-<h3>{p.source}</h3>
+{articles.length===0 && <p>기사 없음</p>}
+
+{articles.map((a,i)=>{
+
+const isBreaking=
+(
+a.title.includes("속보")||
+a.title.includes("단독")||
+a.title.includes("1보")
+)
+&& a.pubDate
+&& (Date.now() - new Date(a.pubDate).getTime()) < 600000;
+
+return(
 
 <div
-onClick={()=>setSelected({...selected,[p.source]:!enabled})}
-style={{
-width:40,
-height:20,
-background:enabled?"#4caf50":"#ccc",
-borderRadius:20,
-cursor:"pointer",
-position:"relative"
-}}
->
-
-<div style={{
-width:16,
-height:16,
-background:"white",
-borderRadius:"50%",
-position:"absolute",
-top:2,
-left:enabled?22:2,
-transition:"0.2s"
-}}/>
-
-</div>
-
-</div>
-
-{articles.map((a,i)=>(
-
-<div 
 key={i}
 style={{
 padding:"10px 0",
@@ -186,14 +228,18 @@ borderRadius:4,
 fontSize:12
 }}
 >
+
 속보
+
 </span>
 
 )}
 
 </div>
 
-))}
+);
+
+})}
 
 </div>
 
