@@ -4,7 +4,6 @@ import * as cheerio from "cheerio";
 const parser = new Parser();
 
 const feeds = [
-
 { source:"연합뉴스", rss:"https://www.yna.co.kr/rss/news.xml", fallback:"https://www.yna.co.kr" },
 
 { source:"KBS", rss:"https://news.kbs.co.kr/rss/rss.xml", fallback:"https://news.kbs.co.kr" },
@@ -23,42 +22,27 @@ const feeds = [
 
 { source:"매일경제", rss:"https://www.mk.co.kr/rss/30000001/", fallback:"https://www.mk.co.kr" },
 { source:"한국경제", rss:"https://rss.hankyung.com/feed/news", fallback:"https://www.hankyung.com" }
-
 ];
 
-async function fallbackScrape(url){
+function extractImage(item){
 
-try{
+if(item.enclosure?.url) return item.enclosure.url;
+if(item["media:content"]?.url) return item["media:content"].url;
+if(item["media:thumbnail"]?.url) return item["media:thumbnail"].url;
 
-const res = await fetch(url);
-const html = await res.text();
-const $ = cheerio.load(html);
-
-const headlines=[];
-
-$("a").each((i,el)=>{
-
-const title=$(el).text().trim();
-const link=$(el).attr("href");
-
-if(title.length>20 && link && headlines.length<6){
-
-headlines.push({
-title,
-link: link.startsWith("http") ? link : url+link
-});
-
+if(item.content){
+const $ = cheerio.load(item.content);
+const img=$("img").first().attr("src");
+if(img) return img;
 }
 
-});
-
-return headlines;
-
-}catch(err){
-
-return [];
-
+if(item.contentSnippet){
+const $ = cheerio.load(item.contentSnippet);
+const img=$("img").first().attr("src");
+if(img) return img;
 }
+
+return null;
 
 }
 
@@ -77,12 +61,7 @@ const headlines = rss.items.slice(0,6).map(i=>({
 title:i.title,
 link:i.link,
 pubDate:i.pubDate,
-
-image:
-i.enclosure?.url ||
-i["media:content"]?.url ||
-i["media:thumbnail"]?.url ||
-null
+image:extractImage(i)
 
 }));
 
@@ -91,13 +70,11 @@ source:f.source,
 headlines
 });
 
-}catch(err){
-
-const fallback = await fallbackScrape(f.fallback);
+}catch{
 
 result.push({
 source:f.source,
-headlines:fallback
+headlines:[]
 });
 
 }
