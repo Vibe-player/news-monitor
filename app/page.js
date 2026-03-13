@@ -155,30 +155,13 @@ transition:"0.2s"
 
 {articles.map((a,i)=>(
 
-<div key={i}
+<div 
+key={i}
 style={{
-display:"flex",
-gap:12,
 padding:"10px 0",
 borderBottom:"1px solid #eee"
 }}
 >
-
-{a.image && (
-
-<img
-src={a.image}
-style={{
-width:90,
-height:70,
-objectFit:"cover",
-borderRadius:6
-}}
-/>
-
-)}
-
-<div style={{flex:1}}>
 
 <a
 href={a.link}
@@ -191,7 +174,22 @@ style={{fontWeight:600}}
 
 </a>
 
-</div>
+{isBreaking && (
+
+<span
+style={{
+marginLeft:6,
+background:"red",
+color:"white",
+padding:"2px 6px",
+borderRadius:4,
+fontSize:12
+}}
+>
+속보
+</span>
+
+)}
 
 </div>
 

@@ -1,5 +1,4 @@
 import Parser from "rss-parser";
-import * as cheerio from "cheerio";
 
 const parser = new Parser();
 
@@ -26,35 +25,6 @@ const feeds = [
 
 ];
 
-async function extractImage(item){
-
-let image =
-item.enclosure?.url ||
-item["media:content"]?.url ||
-item["media:thumbnail"]?.url;
-
-if(image) return image;
-
-try{
-
-const res = await fetch(item.link,{
-headers:{'User-Agent':'Mozilla/5.0'}
-});
-
-const html = await res.text();
-
-const $ = cheerio.load(html);
-
-const og=$('meta[property="og:image"]').attr("content");
-
-if(og) return og;
-
-}catch{}
-
-return null;
-
-}
-
 export async function GET(){
 
 const result=[];
@@ -65,18 +35,13 @@ try{
 
 const rss = await parser.parseURL(f.rss);
 
-const headlines = await Promise.all(
-
-rss.items.slice(0,6).map(async (i)=>({
+const headlines = rss.items.slice(0,6).map(i=>({
 
 title:i.title,
 link:i.link,
-pubDate:i.pubDate,
-image:await extractImage(i)
+pubDate:i.pubDate
 
-}))
-
-);
+}));
 
 result.push({
 source:f.source,
