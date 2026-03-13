@@ -1,244 +1,227 @@
 "use client";
 
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home(){
 
-  const [data,setData] = useState([]);
-  const [tab,setTab] = useState("헤드라인");
-  const [search,setSearch] = useState("");
-  const [alert,setAlert] = useState(null);
+const [data,setData]=useState([]);
+const [tab,setTab]=useState("헤드라인");
+const [search,setSearch]=useState("");
+const [selected,setSelected]=useState({});
 
-  const [selected,setSelected] = useState({});
+async function loadNews(){
 
-  async function loadNews(){
+const res=await fetch("/api/news");
+const json=await res.json();
 
-    const res = await fetch("/api/news");
-    const json = await res.json();
+setData(json);
 
-    setData(json);
+const init={};
+json.forEach(p=>init[p.source]=true);
+setSelected(init);
 
-    const init={};
-    json.forEach(p=>init[p.source]=true);
-    setSelected(init);
+checkBreaking(json);
 
-    json.forEach(p=>{
+}
 
-      p.headlines.forEach(h=>{
+function checkBreaking(news){
 
-        if(
-          h.title.includes("속보") ||
-          h.title.includes("단독") ||
-          h.title.includes("1보")
-        ){
+news.forEach(p=>{
+p.headlines.forEach(a=>{
 
-          setAlert(h.title);
+const title=a.title||"";
 
-        }
+if(
+title.includes("속보")||
+title.includes("단독")||
+title.includes("1보")
+){
 
-      });
+if(Notification.permission==="granted"){
 
-    });
+new Notification("🚨 속보 알림",{
+body:title,
+icon:"/next.svg"
+});
 
-  }
+}
 
-  useEffect(()=>{
+}
 
-    loadNews();
+});
+});
 
-    const timer=setInterval(()=>{
+}
 
-      loadNews();
+useEffect(()=>{
 
-    },30000);
+if("Notification" in window){
+Notification.requestPermission();
+}
 
-    return ()=>clearInterval(timer);
+loadNews();
 
-  },[]);
+const interval=setInterval(loadNews,30000);
 
+return()=>clearInterval(interval);
 
+},[]);
 
-  function togglePaper(paper){
+function filtered(headlines){
 
-    setSelected({
-      ...selected,
-      [paper]:!selected[paper]
-    });
+return headlines.filter(a=>{
 
-  }
+const title=(a.title||"").toLowerCase();
 
+if(search && !title.includes(search.toLowerCase())) return false;
 
-  function filterArticles(headlines){
+if(tab==="속보&단독"){
 
-    if(tab==="속보&단독"){
+return(
+title.includes("속보")||
+title.includes("단독")||
+title.includes("1보")
+);
 
-      return headlines.filter(h =>
-        h.title.includes("속보") ||
-        h.title.includes("단독") ||
-        h.title.includes("1보")
-      );
+}
 
-    }
+if(tab==="칼럼"){
 
-    if(tab==="칼럼"){
+return(
+title.includes("칼럼")||
+title.includes("사설")||
+title.includes("오피니언")
+);
 
-      return headlines.filter(h =>
-        h.title.includes("칼럼") ||
-        h.title.includes("사설") ||
-        h.title.includes("오피니언")
-      );
+}
 
-    }
+return true;
 
-    return headlines;
+});
 
-  }
+}
 
+return(
 
-  return(
+<div style={{maxWidth:900,margin:"40px auto",fontFamily:"sans-serif"}}>
 
-    <main className="max-w-3xl mx-auto p-6">
+<h1>📰 News Brief</h1>
 
-      <h1 className="text-2xl font-bold mb-6">
-        📰 News Brief
-      </h1>
+<div style={{display:"flex",gap:10,marginBottom:20}}>
 
+<button onClick={()=>setTab("헤드라인")}>헤드라인</button>
+<button onClick={()=>setTab("칼럼")}>칼럼</button>
+<button onClick={()=>setTab("속보&단독")}>속보&단독</button>
 
-      {alert && (
+</div>
 
-        <div className="bg-red-500 text-white p-3 rounded mb-6">
+<input
+placeholder="기사 검색"
+value={search}
+onChange={e=>setSearch(e.target.value)}
+style={{width:"100%",padding:10,marginBottom:20}}
+/>
 
-          🚨 속보 감지  
-          <div className="text-sm mt-1">{alert}</div>
+{data.map(p=>{
 
-        </div>
+if(!selected[p.source]) return null;
 
-      )}
+const articles=filtered(p.headlines);
 
+return(
 
-      <div className="flex gap-3 mb-6">
+<div key={p.source} style={{marginBottom:30,border:"1px solid #eee",padding:15,borderRadius:10}}>
 
-        {["헤드라인","칼럼","속보&단독"].map(t=>(
+<div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
 
-          <button
-            key={t}
-            onClick={()=>setTab(t)}
-            className={`px-4 py-2 rounded ${
-              tab===t
-              ? "bg-black text-white"
-              : "bg-gray-200"
-            }`}
-          >
-            {t}
-          </button>
+<h3>{p.source}</h3>
 
-        ))}
+<label>
 
-      </div>
+<input
+type="checkbox"
+checked={selected[p.source]||false}
+onChange={e=>setSelected({...selected,[p.source]:e.target.checked})}
+/>
 
+</label>
 
-      <input
-        type="text"
-        placeholder="기사 검색"
-        value={search}
-        onChange={e=>setSearch(e.target.value)}
-        className="w-full border p-2 rounded mb-6"
-      />
+</div>
 
+{articles.length===0 && <p>기사 없음</p>}
 
-      {data
-        .filter(p=>selected[p.source])
-        .map(paper=>{
+{articles.map((a,i)=>{
 
-        const articles = filterArticles(paper.headlines)
-          .filter(h =>
-            h.title.toLowerCase()
-            .includes(search.toLowerCase())
-          );
+const isBreaking=
+(
+a.title.includes("속보")||
+a.title.includes("단독")||
+a.title.includes("1보")
+)
+&& a.pubDate
+&& (Date.now() - new Date(a.pubDate).getTime()) < 600000;
 
-        return(
+return(
 
-        <div
-          key={paper.source}
-          className="bg-white p-4 rounded-xl shadow mb-6"
-        >
+<div key={i} style={{display:"flex",gap:10,marginBottom:12}}>
 
-          <div className="flex justify-between items-center mb-3">
+{a.image && (
 
-            <h2 className="font-bold text-lg">
-              {paper.source}
-            </h2>
+<img
+src={a.image}
+style={{
+width:80,
+height:80,
+objectFit:"cover",
+borderRadius:6
+}}
+/>
 
-            <button
-              onClick={()=>togglePaper(paper.source)}
-              className={`relative w-12 h-6 rounded-full ${
-                selected[paper.source]
-                ? "bg-green-500"
-                : "bg-gray-300"
-              }`}
-            >
+)}
 
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition ${
-                  selected[paper.source]
-                    ? "translate-x-6"
-                    : ""
-                }`}
-              />
+<div>
 
-            </button>
+<a href={a.link} target="_blank" style={{fontWeight:600}}>
 
-          </div>
+{a.title}
 
+</a>
 
-          <ul className="space-y-2">
+{isBreaking && (
 
-          {articles.length===0
-            ? <li className="text-gray-400 text-sm">기사 없음</li>
-            : articles.map((h,i)=>{
+<span
+style={{
+marginLeft:6,
+background:"red",
+color:"white",
+padding:"2px 6px",
+borderRadius:4,
+fontSize:12
+}}
+>
 
-              const isBreaking =
-                h.title.includes("속보") ||
-                h.title.includes("단독") ||
-                h.title.includes("1보");
+속보
 
-              return(
+</span>
 
-              <li key={i} className="flex gap-2 items-start">
+)}
 
-                {isBreaking && (
+</div>
 
-                  <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded">
-                    속보
-                  </span>
+</div>
 
-                )}
+);
 
-                <a
-                  href={h.link}
-                  target="_blank"
-                  className="hover:underline"
-                >
-                  {h.title}
-                </a>
+})}
 
-              </li>
+</div>
 
-              );
+);
 
-            })
-          }
+})}
 
-          </ul>
+</div>
 
-        </div>
-
-        );
-
-      })}
-
-    </main>
-
-  );
+);
 
 }

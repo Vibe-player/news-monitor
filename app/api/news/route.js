@@ -155,8 +155,10 @@ export async function GET(){
 
       const headlines = rss.items.slice(0,6).map(i=>({
 
-        title:i.title,
-        link:i.link
+       title:i.title,
+        link:i.link,
+        pubDate:i.pubDate,
+        image:i.enclosure?.url || i["media:content"]?.url || null
 
       }));
 
