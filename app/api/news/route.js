@@ -4,43 +4,52 @@ import * as cheerio from "cheerio";
 const parser = new Parser();
 
 const feeds = [
-{ source:"연합뉴스", rss:"https://www.yna.co.kr/rss/news.xml", fallback:"https://www.yna.co.kr" },
 
-{ source:"KBS", rss:"https://news.kbs.co.kr/rss/rss.xml", fallback:"https://news.kbs.co.kr" },
-{ source:"MBC", rss:"https://imnews.imbc.com/rss/news.xml", fallback:"https://imnews.imbc.com" },
-{ source:"SBS", rss:"https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01", fallback:"https://news.sbs.co.kr" },
-{ source:"JTBC", rss:"https://fs.jtbc.co.kr/RSS/newsflash.xml", fallback:"https://news.jtbc.co.kr" },
-{ source:"TV조선", rss:"https://www.tvchosun.com/rss/news.xml", fallback:"https://www.tvchosun.com" },
-{ source:"채널A", rss:"https://rss.ichannela.com/news/main.xml", fallback:"https://www.ichannela.com" },
-{ source:"YTN", rss:"https://www.ytn.co.kr/_rss/news.xml", fallback:"https://www.ytn.co.kr" },
+{ source:"연합뉴스", rss:"https://www.yna.co.kr/rss/news.xml" },
 
-{ source:"조선일보", rss:"https://www.chosun.com/arc/outboundfeeds/rss/?outputType=xml", fallback:"https://www.chosun.com" },
-{ source:"중앙일보", rss:"https://rss.joins.com/joins_total_list.xml", fallback:"https://www.joongang.co.kr" },
-{ source:"동아일보", rss:"https://rss.donga.com/total.xml", fallback:"https://www.donga.com" },
-{ source:"한겨레", rss:"https://www.hani.co.kr/rss/", fallback:"https://www.hani.co.kr" },
-{ source:"경향신문", rss:"https://www.khan.co.kr/rss/rssdata/total_news.xml", fallback:"https://www.khan.co.kr" },
+{ source:"KBS", rss:"https://news.kbs.co.kr/rss/rss.xml" },
+{ source:"MBC", rss:"https://imnews.imbc.com/rss/news.xml" },
+{ source:"SBS", rss:"https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01" },
+{ source:"JTBC", rss:"https://fs.jtbc.co.kr/RSS/newsflash.xml" },
+{ source:"TV조선", rss:"https://www.tvchosun.com/rss/news.xml" },
+{ source:"채널A", rss:"https://rss.ichannela.com/news/main.xml" },
+{ source:"YTN", rss:"https://www.ytn.co.kr/_rss/news.xml" },
 
-{ source:"매일경제", rss:"https://www.mk.co.kr/rss/30000001/", fallback:"https://www.mk.co.kr" },
-{ source:"한국경제", rss:"https://rss.hankyung.com/feed/news", fallback:"https://www.hankyung.com" }
+{ source:"조선일보", rss:"https://www.chosun.com/arc/outboundfeeds/rss/?outputType=xml" },
+{ source:"중앙일보", rss:"https://rss.joins.com/joins_total_list.xml" },
+{ source:"동아일보", rss:"https://rss.donga.com/total.xml" },
+{ source:"한겨레", rss:"https://www.hani.co.kr/rss/" },
+{ source:"경향신문", rss:"https://www.khan.co.kr/rss/rssdata/total_news.xml" },
+
+{ source:"매일경제", rss:"https://www.mk.co.kr/rss/30000001/" },
+{ source:"한국경제", rss:"https://rss.hankyung.com/feed/news" }
+
 ];
 
-function extractImage(item){
+async function extractImage(item){
 
-if(item.enclosure?.url) return item.enclosure.url;
-if(item["media:content"]?.url) return item["media:content"].url;
-if(item["media:thumbnail"]?.url) return item["media:thumbnail"].url;
+let image =
+item.enclosure?.url ||
+item["media:content"]?.url ||
+item["media:thumbnail"]?.url;
 
-if(item.content){
-const $ = cheerio.load(item.content);
-const img=$("img").first().attr("src");
-if(img) return img;
-}
+if(image) return image;
 
-if(item.contentSnippet){
-const $ = cheerio.load(item.contentSnippet);
-const img=$("img").first().attr("src");
-if(img) return img;
-}
+try{
+
+const res = await fetch(item.link,{
+headers:{'User-Agent':'Mozilla/5.0'}
+});
+
+const html = await res.text();
+
+const $ = cheerio.load(html);
+
+const og=$('meta[property="og:image"]').attr("content");
+
+if(og) return og;
+
+}catch{}
 
 return null;
 
@@ -56,14 +65,18 @@ try{
 
 const rss = await parser.parseURL(f.rss);
 
-const headlines = rss.items.slice(0,6).map(i=>({
+const headlines = await Promise.all(
+
+rss.items.slice(0,6).map(async (i)=>({
 
 title:i.title,
 link:i.link,
 pubDate:i.pubDate,
-image:extractImage(i)
+image:await extractImage(i)
 
-}));
+}))
+
+);
 
 result.push({
 source:f.source,
