@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const notified = new Set();
+
 export default function Home(){
 
 const [data,setData]=useState([]);
@@ -11,14 +13,20 @@ const [selected,setSelected]=useState({});
 
 async function loadNews(){
 
-const res=await fetch("/api/news");
+const res=await fetch("/api/news",{cache:"no-store"});
 const json=await res.json();
 
 setData(json);
 
-const init={};
-json.forEach(p=>init[p.source]=true);
-setSelected(init);
+setSelected(prev=>{
+const updated={...prev};
+json.forEach(p=>{
+if(updated[p.source]===undefined){
+updated[p.source]=true;
+}
+});
+return updated;
+});
 
 checkBreaking(json);
 
@@ -32,10 +40,13 @@ p.headlines.forEach(a=>{
 const title=a.title||"";
 
 if(
-title.includes("속보")||
+(title.includes("속보")||
 title.includes("단독")||
-title.includes("1보")
+title.includes("1보"))
+&& !notified.has(title)
 ){
+
+notified.add(title);
 
 if(Notification.permission==="granted"){
 
@@ -76,23 +87,19 @@ const title=(a.title||"").toLowerCase();
 if(search && !title.includes(search.toLowerCase())) return false;
 
 if(tab==="속보&단독"){
-
 return(
 title.includes("속보")||
 title.includes("단독")||
 title.includes("1보")
 );
-
 }
 
 if(tab==="칼럼"){
-
 return(
 title.includes("칼럼")||
 title.includes("사설")||
 title.includes("오피니언")
 );
-
 }
 
 return true;
@@ -181,7 +188,7 @@ borderRadius:6
 
 <div>
 
-<a href={a.link} target="_blank" style={{fontWeight:600}}>
+<a href={a.link} target="_blank" rel="noopener noreferrer" style={{fontWeight:600}}>
 
 {a.title}
 
