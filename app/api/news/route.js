@@ -5,39 +5,39 @@ const parser = new Parser();
 
 const feeds = [
 
-{ source:"연합뉴스", rss:"https://www.yna.co.kr/rss/news.xml", url:"https://www.yna.co.kr" },
+{ source:"연합뉴스", rss:"https://www.yna.co.kr/rss/news.xml", url:"https://www.yna.co.kr", selector:"a" },
 
-{ source:"KBS", rss:"https://news.kbs.co.kr/rss/news.xml", url:"https://news.kbs.co.kr/news/list.do?ncd=1821" },
+{ source:"KBS", rss:"https://news.kbs.co.kr/rss/news.xml", url:"https://news.kbs.co.kr/news/list.do?ncd=1821", selector:".headline-title" },
 
-{ source:"MBC", rss:"https://imnews.imbc.com/rss/news.xml", url:"https://imnews.imbc.com/news/2024/" },
+{ source:"MBC", rss:"https://imnews.imbc.com/rss/news.xml", url:"https://imnews.imbc.com/news/2024/", selector:".title" },
 
-{ source:"SBS", rss:"https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01", url:"https://news.sbs.co.kr/news/newsMain.do" },
+{ source:"SBS", rss:"https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01", url:"https://news.sbs.co.kr/news/newsMain.do", selector:".news" },
 
-{ source:"JTBC", rss:"https://fs.jtbc.co.kr/RSS/newsflash.xml", url:"https://news.jtbc.co.kr" },
+{ source:"JTBC", rss:"https://fs.jtbc.co.kr/RSS/newsflash.xml", url:"https://news.jtbc.co.kr", selector:"a" },
 
-{ source:"TV조선", rss:"https://www.tvchosun.com/rss/news.xml", url:"https://www.tvchosun.com/news/" },
+{ source:"TV조선", rss:"https://www.tvchosun.com/rss/news.xml", url:"https://www.tvchosun.com/news/", selector:"a" },
 
-{ source:"채널A", rss:"https://rss.ichannela.com/news/main.xml", url:"https://www.ichannela.com/news/main/news_main_renew.do" },
+{ source:"채널A", rss:"https://rss.ichannela.com/news/main.xml", url:"https://www.ichannela.com/news/main/news_main_renew.do", selector:"a" },
 
-{ source:"YTN", rss:"https://www.ytn.co.kr/_rss/news.xml", url:"https://www.ytn.co.kr/news/news_list.php" },
+{ source:"YTN", rss:"https://www.ytn.co.kr/_rss/news.xml", url:"https://www.ytn.co.kr/news/news_list.php", selector:"a" },
 
-{ source:"조선일보", rss:"https://www.chosun.com/arc/outboundfeeds/rss/?outputType=xml", url:"https://www.chosun.com" },
+{ source:"조선일보", rss:"https://www.chosun.com/arc/outboundfeeds/rss/?outputType=xml", url:"https://www.chosun.com", selector:"a" },
 
-{ source:"중앙일보", rss:"https://rss.joins.com/joins_news_list.xml", url:"https://www.joongang.co.kr" },
+{ source:"중앙일보", rss:"https://rss.joins.com/joins_news_list.xml", url:"https://www.joongang.co.kr", selector:"a" },
 
-{ source:"동아일보", rss:"https://rss.donga.com/total.xml", url:"https://www.donga.com" },
+{ source:"동아일보", rss:"https://rss.donga.com/total.xml", url:"https://www.donga.com", selector:"a" },
 
-{ source:"한겨레", rss:"https://www.hani.co.kr/rss/", url:"https://www.hani.co.kr" },
+{ source:"한겨레", rss:"https://www.hani.co.kr/rss/", url:"https://www.hani.co.kr", selector:"a" },
 
-{ source:"경향신문", rss:"https://www.khan.co.kr/rss/rssdata/total_news.xml", url:"https://www.khan.co.kr" },
+{ source:"경향신문", rss:"https://www.khan.co.kr/rss/rssdata/total_news.xml", url:"https://www.khan.co.kr", selector:"a" },
 
-{ source:"매일경제", rss:"https://www.mk.co.kr/rss/30000001/", url:"https://www.mk.co.kr" },
+{ source:"매일경제", rss:"https://www.mk.co.kr/rss/30000001/", url:"https://www.mk.co.kr", selector:"a" },
 
-{ source:"한국경제", rss:"https://rss.hankyung.com/feed/all-news", url:"https://www.hankyung.com" }
+{ source:"한국경제", rss:"https://rss.hankyung.com/feed/all-news", url:"https://www.hankyung.com", selector:"a" }
 
 ];
 
-async function scrapeHeadlines(url){
+async function scrapeHeadlines(url, selector){
 
 try{
 
@@ -48,7 +48,7 @@ const $ = cheerio.load(html);
 
 const headlines=[];
 
-$("a").each((i,el)=>{
+$(selector).each((i,el)=>{
 
 const title=$(el).text().trim();
 const link=$(el).attr("href");
@@ -98,7 +98,7 @@ pubDate:i.pubDate
 
 if(headlines.length===0){
 
-headlines = await scrapeHeadlines(f.url);
+headlines = await scrapeHeadlines(f.url,f.selector);
 
 }
 
