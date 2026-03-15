@@ -6,19 +6,19 @@ const feeds = [
 
 { source:"연합뉴스", rss:"https://www.yna.co.kr/rss/news.xml" },
 
-{ source:"KBS", rss:"https://news.kbs.co.kr/rss/rss.xml" },
+{ source:"KBS", rss:"https://rsshub.app/kbs/news" },
 
-{ source:"MBC", rss:"https://imnews.imbc.com/rss/news.xml" },
+{ source:"MBC", rss:"https://rsshub.app/mbc/news" },
 
 { source:"SBS", rss:"https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01" },
 
 { source:"JTBC", rss:"https://fs.jtbc.co.kr/RSS/newsflash.xml" },
 
-{ source:"TV조선", rss:"https://www.tvchosun.com/rss/news.xml" },
+{ source:"TV조선", rss:"https://rsshub.app/tvchosun/news" },
 
 { source:"채널A", rss:"https://rss.ichannela.com/news/main.xml" },
 
-{ source:"YTN", rss:"https://www.ytn.co.kr/_rss/news.xml" },
+{ source:"YTN", rss:"https://rsshub.app/ytn/news" },
 
 { source:"조선일보", rss:"https://www.chosun.com/arc/outboundfeeds/rss/?outputType=xml" },
 
@@ -32,7 +32,7 @@ const feeds = [
 
 { source:"매일경제", rss:"https://www.mk.co.kr/rss/30000001/" },
 
-{ source:"한국경제", rss:"https://rss.hankyung.com/feed/news" }
+{ source:"한국경제", rss:"https://rsshub.app/hankyung/news" }
 
 ];
 
